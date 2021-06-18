@@ -1,0 +1,47 @@
+---
+title: "osmdata_example"
+author: "Fernando Calderon-Figueroa"
+date: "18/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading libraries
+Install osmdata from CRAN using `install.packages("osmdata")`
+```{r}
+library(tidyverse)
+library(sf)
+library(osmdata)
+```
+
+## Making a simple query and pulling coordinates for other uses
+
+```{r query}
+query1 <- opq('Evanston, Illinois') %>% ## this function sets the boundaries for the query
+  add_osm_feature(key = 'amenity', value = c('restaurant', 'cafe', 'bar'), value_exact = FALSE) %>% ## query itself. The basic composition for any OSM query is the key and the value. Look OSM wiki for more definitions. 
+  osmdata_sf() %>% ## here you define the kind of spatial object you want, sp or sf
+  unique_osmdata() ## osmdata pulls data in different sptaial formats. The main ones are nodes (points), lines, and polygons. Since these are hierarchical,this last function pulls only unique features rather than nodes nested in lines, lines in polygons, and so forth. 
+
+```
+The code above creates an osmdata object. This is compatible with other spatial objects common to R, such as `sp` and `sf` object. You can take a look at the object and see all its features.
+
+```{r see_object}
+query1
+```
+You can also plot the object, at least those stored as nodes or points. We can just take a look to make sure things are there. 
+
+```{r plot}
+plot(query1$osm_points, max.plot = 1)
+```
+
+```{r}
+(evanston_amen_coords <- data.frame(osm_id = query1$osm_points$osm_id,
+                                  query1$osm_points$geometry, 
+                                  amenity = query1$osm_points$amenity) %>% 
+  separate(geometry, c(NA, "lon", "lat", NA), sep = "[(),]")) %>% head()
+```
+
+You can now export your CSV and use it in as many models with contextual data you want!
